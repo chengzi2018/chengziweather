@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +55,6 @@ public class ChooseAreaFragment extends Fragment {
     private List<County> countyList;
     private Province selectedProvince;
     private City selectedCity;
-    private County selectedCounty;
     private int currentLevel;  //当前选中的级别
 
     @Override
@@ -69,7 +69,7 @@ public class ChooseAreaFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+    public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -103,6 +103,7 @@ public class ChooseAreaFragment extends Fragment {
         backBtn.setVisibility(View.GONE);
         provinceList= DataSupport.findAll(Province.class);
         if(provinceList.size()>0){
+            Log.d("ChooseAreaFragment",""+provinceList.size());
             dataList.clear();
             for(Province province:provinceList){
                 dataList.add(province.getProvinceName());
@@ -112,6 +113,7 @@ public class ChooseAreaFragment extends Fragment {
             currentLevel=LEVEL_PROVINCE;
         }else {
             String address="http://guolin.tech/api/china";
+            Log.d("ChooseAreaFragment","queryProvinces"+address);
             queryFromServer(address,"province");
         }
     }
@@ -157,15 +159,19 @@ public class ChooseAreaFragment extends Fragment {
 
     private void queryFromServer(String address,final String type) {
         showProgressDialog();
+        Log.d("ChooseAreaFragment","queryFromServer"+address+type);
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseText=response.body().string();
+                Log.d("ChooseAreaFragment","queryFromServer"+responseText);
                 boolean result=false;
                 if("province".equals(type)){
                     result= Utility.handleProvinceResponse(responseText);
+                    Log.d("ChooseAreaFragment",responseText+result);
                 }else if("city".equals(type)){
                     result=Utility.handleCityResponse(responseText,selectedProvince.getId());
+                    Log.d("MainActivity",responseText+selectedProvince.getId());
                 }else if("county".equals(type)){
                     result=Utility.handleCountyResponse(responseText,selectedCity.getId());
                 }
