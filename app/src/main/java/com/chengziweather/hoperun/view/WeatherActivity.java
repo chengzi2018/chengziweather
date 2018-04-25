@@ -1,17 +1,25 @@
 package com.chengziweather.hoperun.view;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.chengziweather.hoperun.R;
 import com.chengziweather.hoperun.gson.Forecast;
 import com.chengziweather.hoperun.gson.Weather;
@@ -26,6 +34,9 @@ import okhttp3.Response;
 
 //My key of Hefeng is:b14b738353a846b7ac53b99565700930
 public class WeatherActivity extends AppCompatActivity {
+    public DrawerLayout drawerLayout;
+    private Button navButton;
+    public SwipeRefreshLayout swipeRefresh;
     private ScrollView weatherLayout;
     private TextView titleCity;
     private TextView titleUpdateTime;
@@ -37,10 +48,22 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView comfortText;
     private TextView carWashText;
     private TextView sportText;
-
+    private ImageView bingPicImg;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        /**
+         *实现背景图与状态栏融合到一起的效果的简单实现方式，要求Android5.0及以上的系统
+         *判断之后调用getWindow().getDecorView()获取当前活动的DecorView，在调用它的
+         *View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+         *表示活动的布局会显示在状态栏上面，最后调用setStatusBarColor将状态栏设置为透明色
+         */
+        if(Build.VERSION.SDK_INT>=21){
+            View decorView =getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN| View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         setContentView(R.layout.activity_weather);
         weatherLayout=(ScrollView)findViewById(R.id.weather_layout);
         titleCity=(TextView)findViewById(R.id.title_city);
@@ -53,19 +76,46 @@ public class WeatherActivity extends AppCompatActivity {
         comfortText=(TextView)findViewById(R.id.comfort_text);
         carWashText=(TextView)findViewById(R.id.car_wash_text);
         sportText=(TextView)findViewById(R.id.sport_text);
+        bingPicImg=(ImageView)findViewById(R.id.bing_pic_img);
+        swipeRefresh=(SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
+        //下面的方法是设置下拉刷新进度条的颜色
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        drawerLayout=(DrawerLayout)findViewById(R.id.drawer_layout);
+        navButton=(Button)findViewById(R.id.nav_button);
         SharedPreferences prefs=PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString=prefs.getString("weather",null);
+        final String weatherId;
         if(weatherString!=null){
             //有缓存时直接解析天气数据
             Weather weather=Utility.handleWeatherResponse(weatherString);
-            Log.d("ChooseAreaFragment","onCreate"+weather);
+            weatherId=weather.basic.weatherId;
             showWeatherInfo(weather);
         }else {
-            String weatherId=getIntent().getStringExtra("weather_id");
+            weatherId=getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherId);
+            }
+        });
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+        String bingPic=prefs.getString("bing_pic",null);
+        Log.d("WeatherActivity"," "+bingPic);
+        if(bingPic!=null){
+            Glide.with(WeatherActivity.this).load(bingPic).into(bingPicImg);
+        }else {
+            loadBingPic();
+        }
     }
+
     /**
      *根据天气id请求城市天气信息
      * */
@@ -77,7 +127,6 @@ public class WeatherActivity extends AppCompatActivity {
             public void onResponse(Call call, Response response) throws IOException {
                 final String responseText=response.body().string();
                 final Weather weather= Utility.handleWeatherResponse(responseText);
-                Log.d("ChooseAreaFragment","requestWeather"+responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -90,6 +139,7 @@ public class WeatherActivity extends AppCompatActivity {
                         }else {
                             Toast.makeText(WeatherActivity.this,"获取天气失败！",Toast.LENGTH_SHORT);
                         }
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -100,12 +150,45 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this,"获取天气失败！",Toast.LENGTH_SHORT);
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
         });
+        loadBingPic();
     }
-/**
+
+    /**
+     * 加载必应每日一图
+     */
+    private void loadBingPic() {
+        String requestBingPic="http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic=response.body().string();
+                Log.d("WeatherActivity2"," "+bingPic);
+                SharedPreferences.Editor editor=PreferenceManager.
+                        getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString("bing_pic",bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic)
+                                .into(bingPicImg);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
  *处理并展示Weather实体类中的数据
  **/
     private void showWeatherInfo(Weather weather) {
@@ -125,7 +208,6 @@ public class WeatherActivity extends AppCompatActivity {
             TextView infoText=(TextView)view.findViewById(R.id.info_text);
             TextView maxText=(TextView)view.findViewById(R.id.max_text);
             TextView minText=(TextView)view.findViewById(R.id.min_text);
-            Log.d("ChooseAreaFragment","requestWeather"+forecast.date+forecast.more.info);
             dataText.setText(forecast.date);
             infoText.setText(forecast.more.info);
             maxText.setText(forecast.temperature.max);

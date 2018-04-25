@@ -84,10 +84,17 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 }else if(currentLevel==LEVEL_COUNTY){
                     String weatherId=countyList.get(position).getWeatherId();
-                    Intent intent=new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weather_id",weatherId);
-                    startActivity(intent);
-                    getActivity().finish();
+                    if(getActivity() instanceof MainActivity){
+                        Intent intent=new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id",weatherId);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }else if(getActivity() instanceof WeatherActivity){
+                        WeatherActivity activity=(WeatherActivity)getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.requestWeather(weatherId);
+                    }
                 }
             }
         });
@@ -111,7 +118,6 @@ public class ChooseAreaFragment extends Fragment {
         backBtn.setVisibility(View.GONE);
         provinceList= DataSupport.findAll(Province.class);
         if(provinceList.size()>0){
-            Log.d("ChooseAreaFragment",""+provinceList.size());
             dataList.clear();
             for(Province province:provinceList){
                 dataList.add(province.getProvinceName());
@@ -121,7 +127,6 @@ public class ChooseAreaFragment extends Fragment {
             currentLevel=LEVEL_PROVINCE;
         }else {
             String address="http://guolin.tech/api/china";
-            Log.d("ChooseAreaFragment","queryProvinces"+address);
             queryFromServer(address,"province");
         }
     }
@@ -167,19 +172,15 @@ public class ChooseAreaFragment extends Fragment {
 
     private void queryFromServer(String address,final String type) {
         showProgressDialog();
-        Log.d("ChooseAreaFragment","queryFromServer"+address+type);
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseText=response.body().string();
-                Log.d("ChooseAreaFragment","queryFromServer"+responseText);
                 boolean result=false;
                 if("province".equals(type)){
                     result= Utility.handleProvinceResponse(responseText);
-                    Log.d("ChooseAreaFragment",responseText+result);
                 }else if("city".equals(type)){
                     result=Utility.handleCityResponse(responseText,selectedProvince.getId());
-                    Log.d("MainActivity",responseText+selectedProvince.getId());
                 }else if("county".equals(type)){
                     result=Utility.handleCountyResponse(responseText,selectedCity.getId());
                 }
