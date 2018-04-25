@@ -110,7 +110,6 @@ public class WeatherActivity extends AppCompatActivity {
             }
         });
         String bingPic=prefs.getString("bing_pic",null);
-        Log.d("WeatherActivity"," "+bingPic);
         if(bingPic!=null){
             Glide.with(WeatherActivity.this).load(bingPic).into(bingPicImg);
         }else {
@@ -169,7 +168,6 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String bingPic=response.body().string();
-                Log.d("WeatherActivity2"," "+bingPic);
                 SharedPreferences.Editor editor=PreferenceManager.
                         getDefaultSharedPreferences(WeatherActivity.this).edit();
                 editor.putString("bing_pic",bingPic);
@@ -227,7 +225,6 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText(carWash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
-
 
         Intent intent=new Intent(this, AutoUpdateService.class);
         startService(intent);
