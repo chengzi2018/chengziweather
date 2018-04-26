@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.chengziweather.hoperun">
-
+                    <!--添加访问网络权限-->
     <uses-permission android:name="android.permission.INTERNET" />
-
+        <!--在manifest中配置LitePalApplication，在android:icon="@mipmap/weather_mip"更改应用图标-->
     <application
         android:name="org.litepal.LitePalApplication"
         android:allowBackup="true"

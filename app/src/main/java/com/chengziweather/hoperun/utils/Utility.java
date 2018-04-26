@@ -15,6 +15,8 @@ import org.json.JSONObject;
 
 /**
  * Created by hoperun on 18-4-20.
+ * 解析和处理服务器返回的数据，先使用JSONArray和JSONObject将数据解析出来，然后组装成实体类对象，
+ * 再调用save()方法将数据存储到数据库。
  */
 
 public class Utility {

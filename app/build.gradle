@@ -31,4 +31,10 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.github.bumptech.glide:glide:3.7.0'
+    /**
+     *litepal用于数据库操作
+     *okhttp3用于进行网络请求
+     * gson用于进行json数据解析
+     * glide用于加载和展示图片
+     */
 }

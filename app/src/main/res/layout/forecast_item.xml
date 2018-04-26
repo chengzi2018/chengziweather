@@ -34,4 +34,5 @@
         android:layout_weight="1"
         android:gravity="right"
         android:textColor="#fff"/>
+    <!--四个TextView分别用于显示天气预报日期_显示天气概况_当天最高最低气温-->
 </LinearLayout>

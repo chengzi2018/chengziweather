@@ -23,6 +23,10 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+/**
+ *加入后台自动更新天气的功能，可以保证用户每次打开软件时看到的都是最新的天气信息，想要实现这个功能就需要创建一个长期在
+ * 在后台运行的定时任务，这时就需要使用到服务了
+ */
 public class AutoUpdateService extends Service {
     public AutoUpdateService() {
     }
@@ -33,6 +37,10 @@ public class AutoUpdateService extends Service {
         return null;
     }
 
+  /**
+   *调用updateWeather更新天气，然后调用updateBingPic更新背景图片，在方法内将更新后的数据存储在SharedPreferences
+   * 中。然后就是创建定时任务的技巧，8小时后AutoUpdateService的onStartCommand()方法就会重新执行。实现后台定时更新功能。
+   */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         updateWeather();
